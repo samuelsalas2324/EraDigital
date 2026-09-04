@@ -1,0 +1,475 @@
+/* =========================================================================
+   Recordatorio de Salud
+   Capa de componentes sobre Tailwind.
+
+   Aquí vive lo que las utilidades no resuelven bien:
+     · el estilo de los iconos SVG del sprite
+     · los componentes con estado (selector de entorno, chips)
+     · la animación de entrada al cambiar de entorno
+     · el respaldo visual por si el CDN no carga
+   ========================================================================= */
+
+:root {
+  --emerald-600: #059669;
+  --emerald-700: #047857;
+  --teal-600: #0D9488;
+  --teal-800: #115E59;
+  --amber-700: #B45309;
+  --slate-900: #0F172A;
+  --slate-600: #475569;
+  --slate-500: #64748B;
+  --slate-200: #E2E8F0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+
+  /* La interfaz esta disenada en claro. Declararlo evita que el navegador
+     del telefono, si esta en modo oscuro, invente sus propios colores. */
+  color-scheme: light;
+}
+
+/* Fondo y color de texto propios, no heredados de nadie. Si Tailwind no
+   alcanza a cargar, el documento sigue siendo legible por si solo. */
+body {
+  background: #F1F5F9;
+  color: var(--slate-900);
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  text-wrap: pretty;
+}
+
+/* =========================================================================
+   ICONOS
+   Un solo estilo de trazo para todo el sistema: los <use href="#..."> heredan
+   el color del texto que los rodea.
+   ========================================================================= */
+.icono {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.caja-icono,
+.caja-icono-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.caja-icono    { height: 3rem;    width: 3rem;    border-radius: 1rem; }
+.caja-icono-sm { height: 2.25rem; width: 2.25rem; border-radius: 0.75rem; }
+
+/* =========================================================================
+   SELECTOR DE ENTORNO
+   Componente con estado. El acento lo define el entorno, y la selección se
+   marca también con una etiqueta de texto: nunca depende solo del color.
+   ========================================================================= */
+.tarjeta-entorno {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--slate-200);
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+              border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.tarjeta-entorno-textos { min-width: 0; }
+
+/* Titulo y subtitulo con color propio: es el texto que se veia en blanco
+   cuando las clases de Tailwind no llegaban a tiempo. */
+.tarjeta-entorno { color: var(--slate-900); }
+.tarjeta-entorno-textos > span:first-child { color: var(--slate-900); }
+.tarjeta-entorno-textos > span:last-child  { color: var(--slate-500); }
+
+.tarjeta-entorno:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -14px rgba(15, 23, 42, 0.28);
+}
+
+.tarjeta-entorno[aria-pressed="true"]::after {
+  content: "✓";
+  position: absolute;
+  top: 0.55rem;
+  right: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.tarjeta-entorno[aria-pressed="true"][data-contexto="rural"] {
+  background: #ECFDF5;
+  border-color: #6EE7B7;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+.tarjeta-entorno[aria-pressed="true"][data-contexto="rural"]::after { color: var(--emerald-700); }
+
+.tarjeta-entorno[aria-pressed="true"][data-contexto="urbano"] {
+  background: #F0FDFA;
+  border-color: #5EEAD4;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18);
+}
+.tarjeta-entorno[aria-pressed="true"][data-contexto="urbano"]::after { color: var(--teal-800); }
+
+.tarjeta-entorno[aria-pressed="true"][data-contexto="tradicional"] {
+  background: #FFFBEB;
+  border-color: #FCD34D;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+.tarjeta-entorno[aria-pressed="true"][data-contexto="tradicional"]::after { color: var(--amber-700); }
+
+/* =========================================================================
+   CHIPS DE ESTADO DEL MEDICAMENTO
+   ========================================================================= */
+.chip-pendiente,
+.chip-tomada,
+.chip-por-confirmar,
+.chip-confirmada {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Ambar: algo sigue pendiente de la persona. */
+.chip-pendiente,
+.chip-por-confirmar {
+  background: #FFFBEB;
+  color: var(--amber-700);
+  box-shadow: inset 0 0 0 1px #FDE68A;
+}
+
+/* Verde: la persona ya lo resolvio. */
+.chip-tomada,
+.chip-confirmada {
+  background: #ECFDF5;
+  color: var(--emerald-700);
+  box-shadow: inset 0 0 0 1px #A7F3D0;
+}
+
+/* =========================================================================
+   TRANSICIÓN AL CAMBIAR DE ENTORNO
+   El contenido no salta: entra desde abajo con un desvanecido corto, para
+   que se note que la pantalla se actualizó sin marear a quien la mira.
+   ========================================================================= */
+.aparecer {
+  animation: aparecer 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================================================
+   ACCESIBILIDAD
+   ========================================================================= */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 50;
+  padding: 0.9rem 1.4rem;
+  border-radius: 0 0 1rem 0;
+  background: var(--slate-900);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.skip-link:focus { left: 0; }
+
+:focus-visible {
+  outline: 3px solid var(--emerald-600);
+  outline-offset: 3px;
+  border-radius: 0.75rem;
+}
+
+/* Sobre el panel verde el anillo esmeralda no se vería. */
+#panel-resumen :focus-visible {
+  outline-color: #fff;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* [hidden] debe ganar frente a cualquier utilidad de display. */
+[hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* =========================================================================
+   RESPALDO SIN CONEXIÓN
+   -------------------------------------------------------------------------
+   Si el CDN de Tailwind no responde, <html> recibe .sin-tailwind y la
+   aplicación conserva color, jerarquía y legibilidad. Los componentes de
+   arriba ya son CSS propio, así que sobreviven intactos.
+   ========================================================================= */
+.sin-tailwind body {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.sin-tailwind header,
+.sin-tailwind footer {
+  background: #fff;
+  border-bottom: 1px solid #D1FAE5;
+  padding: 1rem 1.5rem;
+}
+.sin-tailwind footer {
+  border-bottom: 0;
+  border-top: 1px solid #D1FAE5;
+  font-size: 0.9rem;
+  color: var(--slate-500);
+}
+
+.sin-tailwind header > div,
+.sin-tailwind footer > div {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  max-width: 52rem;
+  margin: 0 auto;
+}
+.sin-tailwind header > div { justify-content: space-between; }
+
+.sin-tailwind main {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.sin-tailwind main > section { margin-bottom: 2.5rem; }
+
+.sin-tailwind h2 { font-size: 1.15rem; margin: 0 0 0.75rem; }
+.sin-tailwind h3 { font-size: 1rem; margin: 0 0 0.25rem; }
+.sin-tailwind p  { color: var(--slate-600); }
+
+.sin-tailwind .icono { width: 1.4rem; height: 1.4rem; }
+
+.sin-tailwind #usuario-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+/* Resumen del día: el degradado es la pieza de identidad, se conserva. */
+.sin-tailwind #panel-resumen {
+  background: linear-gradient(135deg, var(--emerald-600), var(--teal-800));
+  color: #fff;
+  border-radius: 1.5rem;
+  padding: 2rem 1.5rem;
+}
+.sin-tailwind #panel-resumen p,
+.sin-tailwind #panel-resumen h2 { color: #fff; }
+.sin-tailwind #saludo { font-size: 1.75rem; font-weight: 800; margin: 0.5rem 0 0; }
+.sin-tailwind #panel-resumen > div > div {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+}
+.sin-tailwind #panel-resumen > div > div > div {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 1rem;
+  padding: 1rem 1.15rem;
+}
+
+/* Tarjetas: recordatorio, citas, confirmación, registro */
+.sin-tailwind #panel-resumen ~ section article,
+.sin-tailwind #lista-citas article,
+.sin-tailwind #confirmacion,
+.sin-tailwind #bitacora li {
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #D1FAE5;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.sin-tailwind #texto-recordatorio {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--slate-900);
+  line-height: 1.4;
+}
+
+.sin-tailwind #panel-pasos { background: #F0FDFA; border-radius: 1rem; padding: 1.25rem; margin-top: 1rem; }
+.sin-tailwind #panel-duda  { background: #FFFBEB; border-radius: 1rem; padding: 1.25rem; margin-top: 1rem; }
+.sin-tailwind #lista-pasos,
+.sin-tailwind #bitacora { list-style: none; padding: 0; }
+.sin-tailwind #lista-pasos li { display: flex; gap: 0.85rem; margin-bottom: 0.85rem; }
+
+/* Botones de acción */
+.sin-tailwind #btn-tomada,
+.sin-tailwind #btn-explicar,
+.sin-tailwind #btn-duda {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 4.5rem;
+  margin-top: 1rem;
+  padding: 0 1.5rem;
+  border: 0;
+  border-radius: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sin-tailwind #btn-tomada { background: var(--emerald-600); color: #fff; }
+.sin-tailwind #btn-tomada:disabled { background: var(--slate-200); color: var(--slate-500); cursor: default; }
+.sin-tailwind #btn-explicar { background: #fff; color: var(--slate-600); box-shadow: inset 0 0 0 1px var(--slate-200); }
+.sin-tailwind #btn-duda     { background: #FFFBEB; color: var(--amber-700); box-shadow: inset 0 0 0 1px #FDE68A; }
+
+.sin-tailwind #acciones-duda button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3.25rem;
+  margin-top: 0.75rem;
+  padding: 0 1.1rem;
+  border: 0;
+  border-radius: 1rem;
+  background: #fff;
+  color: var(--amber-700);
+  box-shadow: inset 0 0 0 1px #FDE68A;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sin-tailwind #bitacora li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+.sin-tailwind #bitacora li button {
+  background: none;
+  border: 0;
+  color: var(--slate-500);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Sin Tailwind, los textos del selector pierden su display:block. */
+.sin-tailwind .tarjeta-entorno-textos span { display: block; }
+.sin-tailwind .tarjeta-entorno-textos span:last-child { font-size: 0.8rem; color: var(--slate-500); }
+
+/* Rojo suave: la persona avisó que no puede ir. No es una alarma, es un estado. */
+.chip-cancelada {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: #FFF1F2;
+  color: #BE123C;
+  box-shadow: inset 0 0 0 1px #FECDD3;
+}
+
+/* =========================================================================
+   TOMAS DE LA SEMANA
+   Cada día es un punto. El estado se distingue por color, por icono y por
+   texto oculto para el lector de pantalla: nunca por el color solamente.
+   ========================================================================= */
+.punto-toma {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+}
+
+.punto-si  { background: #D1FAE5; color: var(--emerald-700); }
+.punto-no  { background: #F1F5F9; color: var(--slate-500); }
+.punto-hoy {
+  background: #fff;
+  color: var(--amber-700);
+  box-shadow: inset 0 0 0 2px #FCD34D;
+}
+
+/* Sección "Mi información" sin Tailwind. */
+.sin-tailwind #datos-persona > div,
+.sin-tailwind #datos-tratamiento > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+}
+.sin-tailwind #datos-persona dt,
+.sin-tailwind #datos-tratamiento dt { font-size: 0.9rem; color: var(--slate-500); }
+.sin-tailwind #datos-persona dd,
+.sin-tailwind #datos-tratamiento dd { margin: 0; font-weight: 700; text-align: right; }
+
+.sin-tailwind #semana-tomas { display: flex; gap: 0.6rem; }
+.sin-tailwind #semana-tomas > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sin-tailwind #semana-tomas .icono { width: 1rem; height: 1rem; }
+
+.sin-tailwind #lista-controles { list-style: none; padding: 0; }
+.sin-tailwind #lista-controles li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #F8FAFC;
+  border-radius: 0.85rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.6rem;
+}
+.sin-tailwind #lista-controles li span { display: block; }
+.sin-tailwind #lista-controles li div span:first-child { font-weight: 700; }
+.sin-tailwind #lista-controles li div span:last-child { font-size: 0.8rem; color: var(--slate-500); }
+.sin-tailwind #lista-controles li > span {
+  background: #fff;
+  border-radius: 0.65rem;
+  padding: 0.35rem 0.7rem;
+  font-weight: 800;
+  color: var(--teal-800);
+}
